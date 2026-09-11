@@ -1,0 +1,15 @@
+# Datos crudos: pesados y reproducibles con los scripts de src/
+data/raw/
+!data/raw/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
