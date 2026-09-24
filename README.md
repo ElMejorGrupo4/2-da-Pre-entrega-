@@ -72,6 +72,7 @@ jupyter notebook notebooks/01_eda_inicial.ipynb
 ## Integrantes
 
 - Juan Serrano
+- Rodrigo Duarte
 
 ## Nota sobre feriados y tipo de día
 
