@@ -52,15 +52,6 @@ python src/descargar_demanda_mem.py     # genera data/processed/demanda_horaria_
 jupyter notebook notebooks/01_eda_inicial.ipynb
 ```
 
-## Avance por pre-entregas
-
-- [x] **Pre-entrega 1 — Estructura, datos y EDA inicial.** Repo armado, serie horaria 2021–2026 construida y validada (granularidad, huecos, duplicados, nulos), primeras visualizaciones: distribución, serie completa y tendencia interanual, estacionalidad mensual, curva diaria (hábil/no hábil, verano/invierno), perfil semanal, mapa de calor hora × mes y análisis regional complementario. Ver `notebooks/01_eda_inicial.ipynb`.
-- [ ] Pre-entrega 2 — Limpieza y enriquecimiento con clima.
-- [ ] Pre-entrega 3 — Clustering de días típicos (K-means, DBSCAN).
-- [ ] Pre-entrega 4 — Modelos supervisados (Regresión Lineal, Random Forest).
-- [ ] Pre-entrega 5 — Explicabilidad (SHAP) y plus de IA.
-- [ ] Pre-entrega 6 — Documentación, sesgos y cierre.
-
 ## Principales hallazgos del EDA
 
 - La demanda va de ~9.300 a ~28.100 MW (media ~16.000), con tres estacionalidades superpuestas: diaria (valle 3–6 h), semanal (hábil > sábado > domingo) y anual con **dos picos**, verano (ene–feb) e invierno (jun–jul).
