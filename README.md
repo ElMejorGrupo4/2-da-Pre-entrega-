@@ -14,11 +14,13 @@ CAMMESA, el operador del Mercado Eléctrico Mayorista (MEM), tiene que garantiza
 |---|---|---|---|
 | CAMMESA — "Demanda Horaria por Tipo" | Demanda real neta total del MEM, paso horario, desagregada en Distribuidores y Grandes Usuarios | ene-2023 → jul-2026 | Base del modelo |
 | CAMMESA — "Demanda Horaria por Regiones" | Total MEM + 9 regiones, paso horario | ene-2021 → dic-2023 | Base del modelo (2021–2022) y análisis regional |
+| CAMMESA (demanda diaria por región) + SMN (clima) — `dataset_demanda_por_region.csv` | Demanda media diaria de las 9 regiones con temperatura, humedad, viento, presión, etc. | ene-2017 → jun-2026 | Análisis regional y fuente de temperatura |
 | CAMMESA — API de demanda (5 min) | Demanda por región cada 5 minutos | 2026 (año corriente) | Complementario |
 | SMN — observaciones horarias | Temperatura, humedad, presión, viento en ~10 estaciones | 2026 | Complementario |
-| Open-Meteo (pendiente) | Temperatura horaria histórica | 2021 → 2026 | Enriquecimiento (Pre-entrega 2) |
 
 Las dos planillas de CAMMESA coinciden hora a hora en el año que se solapan (2023, diferencia máxima 0,04 %), por lo que se encadenan en una única serie continua de **48.912 horas (2021-01-01 → 2026-07-31), sin huecos ni nulos**.
+
+El dataset regional diario se validó contra esa serie: sumando las 9 regiones por día coincide con el promedio diario de la serie horaria (diferencia máxima 0,38 %). De sus variables climáticas, **solo las temperaturas son confiables**: el resto cambia de escala en 2021 por un problema al unir los dos archivos del SMN (pendiente de revisión).
 
 **Alcance elegido:** total país (MEM). Es la serie que CAMMESA efectivamente pronostica para el despacho, y es la única con más de 5 años de historia horaria continua y actualización mensual.
 
@@ -30,7 +32,7 @@ Proyecto Final/
 ├── requirements.txt
 ├── data/
 │   ├── raw/          # descargas sin modificar (no versionadas en git)
-│   └── processed/    # datasets construidos por los scripts de src/
+│   └── processed/    # datasets construidos (serie horaria MEM, regional horaria 2021-23, regional diaria con clima)
 ├── notebooks/        # numerados por etapa
 │   └── 01_eda_inicial.ipynb
 ├── reports/
@@ -64,7 +66,8 @@ jupyter notebook notebooks/01_eda_inicial.ipynb
 - La demanda va de ~9.300 a ~28.100 MW (media ~16.000), con tres estacionalidades superpuestas: diaria (valle 3–6 h), semanal (hábil > sábado > domingo) y anual con **dos picos**, verano (ene–feb) e invierno (jun–jul).
 - **La hora del pico depende de la estación:** a la tarde (14–16 h) en verano, a la noche (20–21 h) en invierno. Esta interacción hora × temporada justifica probar modelos no lineales.
 - Todas las horas récord de la serie son tardes hábiles de febrero (olas de calor). Se conservan: son los eventos que más importa acertar.
-- GBA + Buenos Aires + Litoral concentran el 62 % de la demanda nacional, por lo que la temperatura de la región pampeana es la variable climática natural para el total país.
+- GBA + Litoral + Buenos Aires concentran el 61 % de la demanda nacional, por lo que la temperatura de la región pampeana es la variable climática natural para el total país.
+- La demanda tiene forma de **U** con la temperatura (mínimo en ~16–17 °C en GBA). La correlación lineal casi no la detecta, lo que refuerza el uso de modelos no lineales o de variables de grados-día.
 
 ## Integrantes
 
