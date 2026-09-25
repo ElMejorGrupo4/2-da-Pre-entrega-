@@ -15,8 +15,6 @@ CAMMESA, el operador del Mercado Eléctrico Mayorista (MEM), tiene que garantiza
 | CAMMESA — "Demanda Horaria por Tipo" | Demanda real neta total del MEM, paso horario, desagregada en Distribuidores y Grandes Usuarios | ene-2023 → jul-2026 | Base del modelo |
 | CAMMESA — "Demanda Horaria por Regiones" | Total MEM + 9 regiones, paso horario | ene-2021 → dic-2023 | Base del modelo (2021–2022) y análisis regional |
 | CAMMESA (demanda diaria por región) + SMN (clima diario) — `dataset_demanda_por_region.csv` | Demanda media diaria de las 9 regiones con temperatura, humedad, viento, presión, etc. de una estación representativa del SMN por región | ene-2017 → jun-2026 | EDA regional (no es insumo del modelo horario) |
-| CAMMESA — API de demanda (5 min) | Demanda por región cada 5 minutos | 2026 (año corriente) | Complementario |
-| SMN — observaciones horarias | Temperatura, humedad, presión, viento en ~10 estaciones | 2026 | Complementario |
 
 Las dos planillas de CAMMESA coinciden hora a hora en el año que se solapan (2023, diferencia máxima 0,04 %), por lo que se encadenan en una única serie continua de **48.912 horas (2021-01-01 → 2026-07-31), sin huecos ni nulos**.
 
@@ -36,7 +34,7 @@ Lo arma `src/construir_dataset_regional.py` a partir de tres archivos crudos, qu
 
 Transformación, resumida:
 
-1. **Clima.** Se leen los dos archivos del SMN. El `.lst` se lee **respetando los tabuladores**: un dato faltante es un campo vacío entre dos tabs, y separarlo por "cualquier espacio" (como hacía la primera versión) corre las columnas. Se eliminan las filas de encabezado que el archivo repite, se limpian espacios y se convierte `S/D` y los vacíos a NaN. Fechas a `datetime` y variables a numéricas.
+1. **Clima.** Se leen los dos archivos del SMN. El `.lst` se lee **respetando los tabuladores**: un dato faltante es un campo vacío entre dos tabs, y separarlo por "cualquier espacio" (como hacía la primera versión) corre las columnas. Se eliminan las filas de encabezado que el archivo repite, se limpian espacios y `S/D` pasa a NaN. En `PRECIP`, según el diccionario de datos del SMN, una celda vacía es un día sin lluvia y se carga como 0 mm. Fechas a `datetime` y variables a numéricas.
 2. **Una estación representativa seleccionada por región** (ver criterio abajo).
 3. **Demanda.** La hoja "Datos Región" pasa de formato ancho (una columna por región) a largo (una fila por día y región), dentro de 2017-01-01 → 2026-06-30 (fin del dato del SMN).
 4. **Unión** por fecha y región con *left merge*: se conservan todas las filas de demanda, y si faltara clima quedaría NaN y se reportaría.
@@ -60,12 +58,12 @@ Transformación, resumida:
 
 **Uso:** este dataset diario se usa para el **EDA regional**. El futuro modelo horario va a necesitar temperatura **horaria**; repetir la `TMEDIA` del día en las 24 horas perdería la variación dentro del día, que es la que mueve la curva de carga.
 
-Las 9 estaciones tienen los 3.468 días del período y `TMEDIA` no tiene faltantes, así que no hicieron falta estaciones de respaldo. Los faltantes que hay (`PRECIP`, `HELIOF` y algunos `TMAX`/`TMIN`) quedan como NaN, sin imputar. Para GBA se evaluó la temperatura de referencia de CAMMESA: está muy correlacionada con Aeroparque (0,986), pero Aeroparque explica un poco mejor la demanda de GBA y mantiene la misma fuente para las 9 regiones.
+Las 9 estaciones tienen los 3.468 días del período y `TMEDIA` no tiene faltantes, así que no hicieron falta estaciones de respaldo. Los faltantes que hay (`HELIOF` y algunos `TMAX`/`TMIN`) quedan como NaN, sin imputar. Para GBA se evaluó la temperatura de referencia de CAMMESA: está muy correlacionada con Aeroparque (0,986), pero Aeroparque explica un poco mejor la demanda de GBA y mantiene la misma fuente para las 9 regiones.
 
 ## Estructura del repositorio
 
 ```
-Proyecto Final/
+2-da-Pre-entrega-/
 ├── README.md
 ├── requirements.txt
 ├── data/
@@ -77,10 +75,7 @@ Proyecto Final/
 │   └── figures/      # gráficos exportados por los notebooks
 └── src/
     ├── descargar_demanda_mem.py   # baja las planillas CAMMESA y arma la serie 2021-2026
-    ├── construir_dataset_regional.py  # arma el dataset regional diario con clima (CAMMESA + SMN)
-    ├── descargar_cammesa.py       # API 5 min por región (año corriente)
-    ├── descargar_smn.py           # observaciones horarias del SMN
-    └── armar_dataset.py           # une API 5 min + SMN (dataset regional 2026)
+    └── construir_dataset_regional.py  # arma el dataset regional diario con clima (CAMMESA + SMN)
 ```
 
 ## Cómo reproducir
@@ -101,7 +96,7 @@ jupyter notebook notebooks/01_eda_inicial.ipynb
 - Todas las horas récord de la serie son tardes hábiles de febrero (olas de calor). Se conservan: son los eventos que más importa acertar.
 - GBA + Litoral + Buenos Aires concentran el 61 % de la demanda nacional, por lo que la temperatura de la región pampeana es la variable climática natural para el total país.
 - La demanda tiene forma de **U** con la temperatura (mínimo en ~19 °C de temperatura media en GBA). La correlación lineal casi no la detecta, lo que refuerza el uso de modelos no lineales o de variables de grados-día.
-- Las 11 variables climáticas del SMN quedaron alineadas y son consistentes en 2017–2026, pero no todas están listas para modelar: `PRECIP` tiene ~73 % de celdas vacías de significado ambiguo, y `HELIOF`, `TMAX` y `TMIN` tienen faltantes.
+- Las 11 variables climáticas del SMN quedaron alineadas y son consistentes en 2017–2026, pero no todas están listas para modelar: `HELIOF`, `TMAX` y `TMIN` tienen faltantes.
 
 ## Integrantes
 

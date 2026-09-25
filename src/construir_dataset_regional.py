@@ -93,6 +93,17 @@ def limpiar_texto(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def precip_vacia_a_cero(df: pd.DataFrame) -> pd.DataFrame:
+    """Segun el diccionario de datos del SMN, una celda de PRECIP vacia es un
+    dia sin lluvia: pasa a 0 mm. "S/D" (sin dato) no se toca y termina como NaN.
+    Se aplica antes de limpiar_texto, que convierte vacios y "S/D" por igual a NaN."""
+    df = df.copy()
+    texto = df["PRECIP"].astype("string").str.strip()
+    vacia = df["PRECIP"].isna() | texto.eq("")
+    df.loc[vacia, "PRECIP"] = "0"
+    return df
+
+
 def a_numerico(df: pd.DataFrame) -> pd.DataFrame:
     """Convierte las variables meteorologicas a float; lo que no es numero queda NaN."""
     df = df.copy()
@@ -104,7 +115,7 @@ def a_numerico(df: pd.DataFrame) -> pd.DataFrame:
 def cargar_clima_hasta_2020() -> pd.DataFrame:
     # calamine lee este Excel de ~1 millon de filas en ~30 s (openpyxl tarda ~5 min).
     df = pd.read_excel(XLSX_CLIMA_HASTA_2020, sheet_name="Datos meteorológicos", engine="calamine")
-    df = limpiar_texto(df).rename(columns={"NUB_TOTAL": "NUB_TOT"})
+    df = limpiar_texto(precip_vacia_a_cero(df)).rename(columns={"NUB_TOTAL": "NUB_TOT"})
     df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce")
     df = df[df["FECHA"] >= INICIO]
     return a_numerico(df)
@@ -116,7 +127,8 @@ def cargar_clima_desde_2021() -> pd.DataFrame:
     # espacio" (lo que hacia el notebook original) se come esos campos vacios
     # y corre todas las columnas siguientes un lugar a la izquierda.
     df = pd.read_csv(LST_CLIMA_DESDE_2021, sep="\t", encoding="utf-8", dtype=str, skip_blank_lines=True)
-    df = limpiar_texto(df)
+    df.columns = df.columns.str.strip()
+    df = limpiar_texto(precip_vacia_a_cero(df))
     # El archivo repite la fila de encabezado cada ~50.000 lineas.
     df = df[df["NRO_OMM"] != "NRO_OMM"]
     df["FECHA"] = pd.to_datetime(df["FECHA"], format="%d/%m/%Y", errors="coerce")
@@ -208,6 +220,8 @@ def validar_dataset(df: pd.DataFrame) -> None:
 
     sin_clima = df["estacion_smn"].isna().sum()
     print(f"  filas de demanda sin clima: {sin_clima}")
+    print(f"  PRECIP: {(df['PRECIP'] == 0).sum():,} dias sin lluvia (0 mm), "
+          f"{(df['PRECIP'] > 0).sum():,} con lluvia, {df['PRECIP'].isna().sum():,} sin dato (S/D)")
 
     nulos = df.groupby("zona")[VARIABLES_CLIMA].apply(lambda g: g.isna().sum())
     print("\nNulos por variable y region:")
